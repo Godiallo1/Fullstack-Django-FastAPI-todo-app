@@ -26,6 +26,13 @@ class TaskDisplay(TaskBase):
     created_at: datetime
     updated_at: datetime
     
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[str] = None
+    due_date: Optional[date] = None
+    is_completed: Optional[bool] = None
+    
 class Config:
     """Allow Pydantic models to work with ORM objects"""
     orm_mode = True
@@ -72,12 +79,18 @@ async def list_tasks():
     tasks = await sync_to_async(list)(Task.objects.all())
     return tasks
 
-@router.get("/{task_id}", response_model=TaskDisplay)
-async def get_task(task_id: int):
+@router.patch("/{task_id}", response_model=TaskDisplay)
+async def partial_update_task(task_id: int, task_data: TaskUpdate):
     """
-    Retrieving a single task by its ID.
+    Partially update a task. Used for toggling completion or other single-field updates.
     """
     task = await get_task_or_404(task_id)
+    
+    update_data = task_data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(task, key, value)
+    
+    await sync_to_async(task.save)()
     return task
 
 @router.put("/{task_id}", response_model=TaskDisplay)

@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskList = document.getElementById('task-list');
     const taskTemplate = document.getElementById('task-template');
     const taskCountSpan = document.getElementById('task-count');
+    const editModal = document.getElementById('edit-modal');
+    const editModalOverlay = document.getElementById('edit-modal-overlay');
+    const editTaskForm = document.getElementById('edit-task-form');
+    const closeModalBtn = document.getElementById('close-modal-btn');
 
     // Fetches all tasks from the API and renders them
     const fetchAndRenderTasks = async () => {
@@ -54,10 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Add event listeners for actions
-        checkbox.addEventListener('change', () => handleCompleteTask(task.id, taskItem));
+        checkbox.addEventListener('change', () => handleCompleteTask(task.id, checkbox));
         templateClone.querySelector('.btn-delete').addEventListener('click', () => handleDeleteTask(task.id, taskItem));
+        templateClone.querySelector('.btn-edit').addEventListener('click', () => handleOpenEditModal(task));
 
         taskList.appendChild(templateClone);
+        
     };
 
     // Handles the form submission to create a new task
@@ -90,16 +96,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Handles marking a task as complete
-    const handleCompleteTask = async (taskId, taskItem) => {
+    // Handles toggling the completion status of a task
+    const handleCompleteTask = async (taskId, checkbox) => {
+        const is_completed = checkbox.checked;
+
         try {
-            const response = await fetch(`${API_URL}/${taskId}/complete`, { method: 'PATCH' });
+            const response = await fetch(`${API_URL}/${taskId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_completed }), // Send the new status
+            });
+
             if (!response.ok) throw new Error('Failed to update task status.');
-            
-            // Refetch all tasks to get the most up-to-date state (including completed_at)
-            fetchAndRenderTasks(); 
+        
+            // Refetching all tasks ensures the UI is perfectly in sync with the DB
+            fetchAndRenderTasks();
         } catch (error) {
             console.error('Error completing task:', error);
+            // Revert checkbox on error
+            checkbox.checked = !is_completed;
         }
     };
 
@@ -119,6 +134,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Opens the edit modal and populates it with task data
+    const handleOpenEditModal = (task) => {
+        editTaskForm.querySelector('#edit-task-id').value = task.id;
+        editTaskForm.querySelector('#edit-title').value = task.title;
+        editTaskForm.querySelector('#edit-description').value = task.description;
+        editTaskForm.querySelector('#edit-priority').value = task.priority;
+        editTaskForm.querySelector('#edit-due_date').value = task.due_date;
+    
+        editModal.classList.remove('hidden');
+        editModalOverlay.classList.remove('hidden');
+    };
+
+    // Closes the edit modal
+    const handleCloseEditModal = () => {
+        editModal.classList.add('hidden');
+        editModalOverlay.classList.add('hidden');
+    };
+
+    // Handles the submission of the edit form
+    const handleEditTask = async (event) => {
+        event.preventDefault();
+
+        const taskId = editTaskForm.querySelector('#edit-task-id').value;
+        const formData = new FormData(editTaskForm);
+
+        const taskData = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            priority: formData.get('priority'),
+            due_date: formData.get('due_date'),
+        };
+    
+        try {
+            const response = await fetch(`${API_URL}/${taskId}`, {
+                method: 'PUT', // PUT replaces the entire resource
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(taskData),
+            });
+
+            if (!response.ok) throw new Error('Failed to update task.');
+        
+            handleCloseEditModal();
+            fetchAndRenderTasks(); // Refresh the list to show changes
+        } catch (error) {
+        console.error('Error updating task:', error);
+        }
+    };
+    
+
     // Updates the count of remaining (incomplete) tasks
     const updateTaskCount = () => {
         const remainingTasks = taskList.querySelectorAll('.task-item:not(.completed)').length;
@@ -128,4 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach event listener to the form and fetch initial data
     taskForm.addEventListener('submit', handleAddTask);
     fetchAndRenderTasks();
+
+    closeModalBtn.addEventListener('click', handleCloseEditModal);
+    editModalOverlay.addEventListener('click', handleCloseEditModal);
+    editTaskForm.addEventListener('submit', handleEditTask);
 });
