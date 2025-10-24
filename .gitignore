@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+todoVENV/
+venv/
+env/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+
+# Collected static files (for production)
+staticfiles/
+
+# IDE / Editor specific
+.idea/
+.vscode/
+*.swp
+
+# Environment variables (Best Practice)
+.env
