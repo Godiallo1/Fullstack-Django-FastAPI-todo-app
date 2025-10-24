@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TodoApp</title>
+    <link rel="stylesheet" href="{% static 'todo/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="container navbar-content">
+            <a href="#" class="logo">TodoApp</a>
+            <nav>
+                <a href="#" class="nav-link">Features</a>
+                <a href="#" class="nav-link">Pricing</a>
+                <a href="#" class="nav-link">About</a>
+                <a href="#" class="nav-link">Contact</a>
+            </nav>
+            <div class="nav-buttons">
+                <a href="#" class="btn btn-secondary">Login</a>
+                <a href="#" class="btn btn-primary">Sign Up</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h1>Organize Your Tasks</h1>
+            <p>Stay productive and never miss a deadline with our intuitive todo management system.</p>
+        </section>
+
+        <section class="content-wrapper">
+            <!-- Add New Task Form -->
+            <div class="form-container">
+                <h2><span class="plus-icon">+</span> Add New Task</h2>
+                <form id="task-form">
+                    <div class="form-group">
+                        <label for="title">Task Title</label>
+                        <input type="text" id="title" name="title" placeholder="Enter task title..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="4" placeholder="Add description..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="priority">Priority</label>
+                        <select id="priority" name="priority">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="due_date">Due Date</label>
+                        <input type="date" id="due_date" name="due_date" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Add Task</button>
+                </form>
+            </div>
+
+            <!-- Task List -->
+            <div class="tasks-container">
+                <div class="tasks-header">
+                    <h2>Your Tasks</h2>
+                    <div class="tasks-meta">
+                        <p><span id="task-count">0</span> tasks remaining</p>
+                        <!-- Filter functionality can be added later -->
+                        <!-- <select id="task-filter">
+                            <option value="all">All Tasks</option>
+                        </select> -->
+                    </div>
+                </div>
+                <ul id="task-list">
+                    <!-- Tasks will be dynamically inserted here by JavaScript -->
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <!-- HTML Template for a single task item (hidden from view) -->
+    <template id="task-template">
+        <li class="task-item" data-id="">
+            <input type="checkbox" class="task-checkbox" title="Mark as complete">
+            <div class="task-details">
+                <div class="task-title-line">
+                    <h3 class="task-title"></h3>
+                    <span class="task-priority"></span>
+                </div>
+                <p class="task-description"></p>
+                <div class="task-meta-info">
+                    <span class="task-due-date"></span>
+                    <span class="task-completed-date" style="display: none;"></span>
+                </div>
+            </div>
+            <div class="task-actions">
+                <!-- Edit functionality can be added later -->
+                <!-- <button class="btn-icon btn-edit" title="Edit task">✏️</button> -->
+                <button class="btn-icon btn-delete" title="Delete task">🗑️</button>
+            </div>
+        </li>
+    </template>
+
+    <script src="{% static 'todo/script.js' %}"></script>
+</body>
+</html>
