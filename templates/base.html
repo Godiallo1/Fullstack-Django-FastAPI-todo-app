@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TodoApp Authentication</title>
+    <link rel="stylesheet" href="{% static 'todo/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="container navbar-content">
+            <a href="/" class="logo">TodoApp</a>
+        </div>
+    </header>
+
+    <main class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
+        <div class="form-container" style="width: 100%; max-width: 500px; margin: 0 auto; box-sizing: border-box;">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
+    
+</body>
+</html>

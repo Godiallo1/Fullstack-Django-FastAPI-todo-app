@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Sign Up</h2>
+    
+    <p>
+        You are about to use your 
+        <strong>{{ account.get_provider.name }}</strong> 
+        account to login to 
+        <strong>{{ site.name|default:"TodoApp" }}</strong>. 
+        As a final step, please complete the following form:
+    </p>
+
+    <form class="signup" id="signup_form" method="post" action="{% url 'socialaccount_signup' %}">
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="error-message" style="margin-top: 0.5rem;">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        {% if redirect_field_value %}
+            <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary btn-full">Sign Up</button>
+    </form>
+{% endblock %}
