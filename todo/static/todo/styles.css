@@ -358,3 +358,49 @@ h2 {
     text-align: center;
     font-weight: 500;
 }
+
+.social-auth {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.btn-social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+}
+
+.btn-social img, .btn-social svg {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-social.google {
+    background-color: #FFFFFF;
+    color: #4B5563;
+    border: 1px solid var(--border-color);
+}
+.btn-social.google:hover {
+    background-color: #F9FAFB;
+}
+
+.btn-social.github {
+    background-color: #24292E;
+    color: white;
+}
+.btn-social.github:hover {
+    background-color: #1F2328;
+}
+
+.divider {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin: 0.5rem 0;
+}

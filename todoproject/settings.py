@@ -37,8 +37,32 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # Third-party apps
+    
     'rest_framework',
+    'rest_framework.authtoken', #Required for token authentication
+    'dj_rest_auth',
+    
+    'django.contrib.sites', # Required by allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    
+    # Providers for Google and GitHub
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.github',
+    
+    # Local apps
     'todo',
+]
+
+SITE_ID = 2
+
+#This tells Django to use allauth's authentication backend
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +73,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'todoproject.urls'
@@ -126,3 +151,45 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#EMAIL VERIFICATION CONFIGURATION
+# For development, we'll print emails to the console.
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Allauth Specific Settings
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory' # Email verification is now required
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email' # Users can log in with username or email
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+
+SOCIALACCOUNT_LOGIN_ON_GET = True
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# This tells allauth to log the user out immediately
+# without showing a confirmation page.
+ACCOUNT_LOGOUT_ON_GET = True
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        # Specifies the permissions we request from GitHub.
+        # "user:email" is the crucial one.
+        'SCOPE': [
+            'read:user',
+            'user:email',
+        ],
+    },
+    'google': {
+        # Specifies the permissions we request from Google.
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+
+ACCOUNT_EMAIL_VERIFICATION = "optional"
