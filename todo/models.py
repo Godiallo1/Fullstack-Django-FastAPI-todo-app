@@ -87,10 +87,16 @@ class Task(models.Model):
     # but logic will move to 'status'
     is_completed = models.BooleanField(default=False) 
     
+    # NEW FIELD: For Drag and Drop ordering
+    order = models.FloatField(default=0.0)
+    
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
+    
+    class Meta:
+        ordering = ['order', '-created_at'] # Sort by order first, then by created_at descending
     
     def save(self, *args, **kwargs):
         # Sync legacy is_completed field with new status

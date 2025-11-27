@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- State Management ---
     let token = null;
     let currentTab = 'Queue'; 
+    let currentPriorityFilter = 'All'; 
     let allTasks = [];
 
     // --- DOM Elements ---
@@ -17,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const taskCountSpan = document.getElementById("task-count");
     const taskForm = document.getElementById("task-form");
     const editTaskForm = document.getElementById("edit-task-form");
+    const priorityFilterSelect = document.getElementById("priority-filter"); 
     
     // Auth Elements
     const loginForm = document.getElementById("login-form");
@@ -203,6 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`${API_BASE_URL}/auth/login`, { method: "POST", body: formData });
             if (!response.ok) throw new Error((await response.json()).detail || "Login failed.");
             const data = await response.json();
+            
             localStorage.setItem("accessToken", data.access);
             token = data.access;
             updateUIForAuthState();
@@ -222,9 +225,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify(Object.fromEntries(formData.entries())),
             });
             if (!response.ok) throw new Error((await response.json()).detail || "Registration failed.");
+            
+            // SUCCESS - Don't auto-login. Show message for Email Verification.
             closeAllModals();
+            alert("Registration successful! Please check your terminal console (or email) for the verification link before logging in.");
+            
+            // Optionally open login modal
             openModal(loginModal);
             loginForm.querySelector("#login-username").value = formData.get('username');
+            
         } catch (error) {
             registerErrorDiv.textContent = error.message;
             registerErrorDiv.classList.remove("hidden");
@@ -238,6 +247,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.status === 401) return;
             if (!response.ok) throw new Error("Failed to fetch tasks.");
             allTasks = await response.json();
+            // Sort by order field
+            allTasks.sort((a, b) => a.order - b.order); 
             renderTasks();
             checkDueTasks(allTasks);
         } catch (error) {
@@ -248,7 +259,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const renderTasks = () => {
         if (!taskList) return;
         taskList.innerHTML = "";
-        const filteredTasks = allTasks.filter(task => task.status === currentTab);
+        
+        // Filter tasks based on current active tab AND priority filter
+        const filteredTasks = allTasks.filter(task => {
+            const statusMatch = task.status === currentTab;
+            const priorityMatch = currentPriorityFilter === 'All' || task.priority === currentPriorityFilter;
+            return statusMatch && priorityMatch;
+        });
+        
         filteredTasks.forEach(renderSingleTask);
         updateTaskCount(filteredTasks.length);
     };
@@ -257,6 +275,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const templateClone = taskTemplate.content.cloneNode(true);
         const taskItem = templateClone.querySelector(".task-item");
         taskItem.dataset.id = task.id;
+        
+        // --- DRAG AND DROP ATTRIBUTES ---
+        taskItem.setAttribute('draggable', true);
+        taskItem.addEventListener('dragstart', handleDragStart);
+        taskItem.addEventListener('dragover', handleDragOver);
+        taskItem.addEventListener('drop', handleDrop);
+        taskItem.addEventListener('dragenter', handleDragEnter);
+        taskItem.addEventListener('dragleave', handleDragLeave);
+        // -------------------------------
         
         templateClone.querySelector(".task-title").textContent = task.title;
         templateClone.querySelector(".task-description").textContent = task.description || "No description";
@@ -274,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
         else statusSpan.style.color = 'gray';
 
         const actionsContainer = templateClone.querySelector(".task-actions");
-        actionsContainer.innerHTML = '';
+        actionsContainer.innerHTML = ''; 
 
         if (task.status === 'Queue') {
             actionsContainer.appendChild(createActionButton('Start', 'btn-primary', () => updateTaskStatus(task.id, 'In Progress')));
@@ -291,6 +318,98 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         taskList.appendChild(templateClone);
+    };
+
+    // --- Drag and Drop Logic ---
+    let dragSrcEl = null;
+
+    function handleDragStart(e) {
+        dragSrcEl = this;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+        this.classList.add('dragging');
+    }
+
+    function handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault(); 
+        }
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    function handleDragEnter(e) {
+        this.classList.add('over');
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('over');
+    }
+
+    async function handleDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation(); 
+        }
+
+        if (dragSrcEl !== this) {
+            const list = this.parentNode;
+            const allItems = Array.from(list.children);
+            const draggedIndex = allItems.indexOf(dragSrcEl);
+            const droppedIndex = allItems.indexOf(this);
+
+            if (draggedIndex < droppedIndex) {
+                list.insertBefore(dragSrcEl, this.nextSibling);
+            } else {
+                list.insertBefore(dragSrcEl, this);
+            }
+            
+            await updateTaskOrder(dragSrcEl.dataset.id, droppedIndex, allItems);
+        }
+        this.classList.remove('over');
+        dragSrcEl.classList.remove('dragging');
+        return false;
+    }
+
+    const updateTaskOrder = async (draggedId, newIndex, allItems) => {
+        // Calculate new order value to fit between neighbors
+        const currentItems = Array.from(document.querySelectorAll('.task-item'));
+        const draggedItem = currentItems.find(item => item.dataset.id === draggedId);
+        
+        if (!draggedItem) return;
+
+        const index = currentItems.indexOf(draggedItem);
+        let newOrder = 0;
+        
+        const getOrder = (id) => {
+            const t = allTasks.find(x => x.id == id);
+            return t ? t.order : 0;
+        };
+
+        const prevItem = currentItems[index - 1];
+        const nextItem = currentItems[index + 1];
+
+        if (!prevItem && nextItem) {
+            newOrder = getOrder(nextItem.dataset.id) - 1.0;
+        } else if (prevItem && !nextItem) {
+            newOrder = getOrder(prevItem.dataset.id) + 1.0;
+        } else if (prevItem && nextItem) {
+            newOrder = (getOrder(prevItem.dataset.id) + getOrder(nextItem.dataset.id)) / 2.0;
+        } else {
+            newOrder = new Date().getTime();
+        }
+
+        try {
+            const task = allTasks.find(t => t.id == draggedId);
+            if(task) task.order = newOrder;
+            
+            await fetchWithAuth(`${API_BASE_URL}/tasks/${draggedId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ order: newOrder })
+            });
+            fetchTasks(); 
+        } catch (error) {
+            console.error("Failed to reorder", error);
+        }
     };
 
     const createActionButton = (text, className, onClick, isIcon = false) => {
@@ -468,6 +587,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (getStartedBtn) getStartedBtn.addEventListener('click', () => openModal(registerModal));
 
     tabButtons.forEach(btn => btn.addEventListener('click', handleTabClick));
+
+    if (priorityFilterSelect) {
+        priorityFilterSelect.addEventListener('change', (e) => {
+            currentPriorityFilter = e.target.value;
+            renderTasks();
+        });
+    }
 
     // --- Initial App Load ---
     initializeApp();

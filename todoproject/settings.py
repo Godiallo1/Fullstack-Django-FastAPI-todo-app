@@ -39,10 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Third-party apps
-    
     'rest_framework',
-    'rest_framework.authtoken', #Required for token authentication
+    'rest_framework.authtoken', # Required for token authentication
     'dj_rest_auth',
+    'dj_rest_auth.registration', # CRITICAL: Needed for registration & email verification
     
     'django.contrib.sites', # Required by allauth
     'allauth',
@@ -59,7 +59,7 @@ INSTALLED_APPS = [
 
 SITE_ID = 2
 
-#This tells Django to use allauth's authentication backend
+# This tells Django to use allauth's authentication backend
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -152,44 +152,31 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-#EMAIL VERIFICATION CONFIGURATION
-# For development, we'll print emails to the console.
+# --- EMAIL & AUTH CONFIGURATION ---
+
+# 1. Console Backend: Emails will be printed to your terminal (CMD)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Allauth Specific Settings
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory' # Email verification is now required
-ACCOUNT_AUTHENTICATION_METHOD = 'username_email' # Users can log in with username or email
+# 2. Allauth Settings
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = True
 
-SOCIALACCOUNT_LOGIN_ON_GET = True
+# 3. Email Verification is now MANDATORY
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory' 
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True # Clicking the link in the console directly confirms the email
+
+# 4. Redirects
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-# This tells allauth to log the user out immediately
-# without showing a confirmation page.
-ACCOUNT_LOGOUT_ON_GET = True
-
-
 SOCIALACCOUNT_PROVIDERS = {
     'github': {
-        # Specifies the permissions we request from GitHub.
-        # "user:email" is the crucial one.
-        'SCOPE': [
-            'read:user',
-            'user:email',
-        ],
+        'SCOPE': ['read:user', 'user:email'],
     },
     'google': {
-        # Specifies the permissions we request from Google.
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        }
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'}
     }
 }
-
-ACCOUNT_EMAIL_VERIFICATION = "optional"

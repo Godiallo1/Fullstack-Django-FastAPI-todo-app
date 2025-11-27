@@ -24,14 +24,15 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     priority: str = 'Low'
     due_date: date
-    # Feature #2: Allow status to be set, defaulting to Queue if not provided
     status: str = 'Queue' 
+    # NEW: Allow order to be passed/read. Default to 0.0
+    order: float = 0.0 
     
 class TaskDisplay(TaskBase):
     """Schema for returning a task to a client"""
     id: int
-    is_completed: bool # Legacy support
-    status: str        # Feature #2, #3, #4: New status field
+    is_completed: bool 
+    status: str       
     completed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
@@ -58,7 +59,9 @@ class TaskUpdate(BaseModel):
     priority: Optional[str] = None
     due_date: Optional[date] = None
     is_completed: Optional[bool] = None
-    status: Optional[str] = None # Feature #3: Allow updating status (Start/Abort)
+    status: Optional[str] = None 
+    # NEW: Allow updating order via PATCH (for drag & drop)
+    order: Optional[float] = None 
 
 
 # --- API Router ---
@@ -125,15 +128,17 @@ async def update_profile(profile_data: ProfileBase, current_user: User = Depends
 @router.post("/", response_model=TaskDisplay, status_code=status.HTTP_201_CREATED)
 async def create_task(task_data: TaskBase, current_user: User = Depends(get_current_user)):
     task_dict = task_data.dict()
-    # Feature #2: Explicitly ensure new tasks start in Queue
     task_dict['status'] = 'Queue'
+    
+    # NEW: Automatically set order based on timestamp to ensure unique sort position
+    task_dict['order'] = datetime.now().timestamp()
+    
     new_task = await sync_to_async(Task.objects.create)(owner=current_user, **task_dict)
     return new_task
 
 @router.get("/", response_model=List[TaskDisplay])
 async def list_tasks(current_user: User = Depends(get_current_user)):
-    # Retrieve ALL tasks for the user. 
-    # Feature #1, #4: Frontend will filter these into Categories/Recycle Bin
+    # Tasks are auto-sorted by 'order' because we added "ordering = ['order']" in models.py
     tasks = await sync_to_async(list)(Task.objects.filter(owner=current_user))
     return tasks
 
@@ -158,10 +163,6 @@ async def update_task(task_id: int, task_data: TaskBase, current_user: User = De
 
 @router.patch("/{task_id}", response_model=TaskDisplay)
 async def partial_update_task(task_id: int, task_data: TaskUpdate, current_user: User = Depends(get_current_user)):
-    """
-    Partially update a task.
-    Feature #3: Used for changing status to 'In Progress' or 'Aborted'
-    """
     task = await get_task_or_404(task_id)
     if task.owner != current_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
@@ -175,9 +176,6 @@ async def partial_update_task(task_id: int, task_data: TaskUpdate, current_user:
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(task_id: int, current_user: User = Depends(get_current_user)):
-    """
-    Feature #4: Permanently delete a task (from Recycle Bin)
-    """
     task = await get_task_or_404(task_id)
     if task.owner != current_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
