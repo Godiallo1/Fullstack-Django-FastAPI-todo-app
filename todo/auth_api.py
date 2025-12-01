@@ -35,11 +35,28 @@ async def register_user(user_data: UserCreate):
             password=user_data.password,
             email=user_data.email
         )
+        
+        # Create EmailAddress for allauth
+        from allauth.account.models import EmailAddress
+        
+        email_address = await sync_to_async(EmailAddress.objects.create)(
+            user=user,
+            email=user.email,
+            primary=True,
+            verified=False
+        )
+        
+        # Send confirmation email
+        # We pass request=None, relying on the Sites framework
+        await sync_to_async(email_address.send_confirmation)(request=None)
+        
         return {"username": user.username, "email": user.email}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists or invalid data provided."
+            detail=f"Registration failed: {str(e)}"
         )
 
 @router.post("/login", response_model=Token)

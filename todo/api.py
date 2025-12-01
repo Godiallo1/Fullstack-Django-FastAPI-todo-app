@@ -127,14 +127,21 @@ async def update_profile(profile_data: ProfileBase, current_user: User = Depends
 
 @router.post("/", response_model=TaskDisplay, status_code=status.HTTP_201_CREATED)
 async def create_task(task_data: TaskBase, current_user: User = Depends(get_current_user)):
-    task_dict = task_data.dict()
-    task_dict['status'] = 'Queue'
-    
-    # NEW: Automatically set order based on timestamp to ensure unique sort position
-    task_dict['order'] = datetime.now().timestamp()
-    
-    new_task = await sync_to_async(Task.objects.create)(owner=current_user, **task_dict)
-    return new_task
+    try:
+        task_dict = task_data.dict()
+        if task_dict.get('description') is None:
+            task_dict['description'] = ""
+        task_dict['status'] = 'Queue'
+        
+        # NEW: Automatically set order based on timestamp to ensure unique sort position
+        task_dict['order'] = datetime.now().timestamp()
+        
+        new_task = await sync_to_async(Task.objects.create)(owner=current_user, **task_dict)
+        return new_task
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/", response_model=List[TaskDisplay])
 async def list_tasks(current_user: User = Depends(get_current_user)):
