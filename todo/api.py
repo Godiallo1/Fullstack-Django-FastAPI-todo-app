@@ -3,7 +3,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from django.contrib.auth.models import User
 from fastapi import FastAPI, APIRouter, HTTPException, status, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime, date
 from asgiref.sync import sync_to_async
@@ -20,11 +20,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 class TaskBase(BaseModel):
     """Schema for creating or updating tasks"""
-    title: str
-    description: Optional[str] = None
-    priority: str = 'Low'
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = Field(None, max_length=1000)
+    priority: str = Field('Low', pattern='^(Low|Medium|High)$')
     due_date: date
-    status: str = 'Queue' 
+    status: str = Field('Queue', pattern='^(Queue|In Progress|Completed|Aborted)$')
     # NEW: Allow order to be passed/read. Default to 0.0
     order: float = 0.0 
     
@@ -54,12 +54,12 @@ class ProfileDisplay(ProfileBase):
         from_attributes = True
     
 class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    priority: Optional[str] = None
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None, max_length=1000)
+    priority: Optional[str] = Field(None, pattern='^(Low|Medium|High)$')
     due_date: Optional[date] = None
     is_completed: Optional[bool] = None
-    status: Optional[str] = None 
+    status: Optional[str] = Field(None, pattern='^(Queue|In Progress|Completed|Aborted)$')
     # NEW: Allow updating order via PATCH (for drag & drop)
     order: Optional[float] = None 
 
@@ -139,9 +139,10 @@ async def create_task(task_data: TaskBase, current_user: User = Depends(get_curr
         new_task = await sync_to_async(Task.objects.create)(owner=current_user, **task_dict)
         return new_task
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        # Log the full error server-side (in a real app, use a logger)
+        print(f"Error creating task: {e}") 
+        # Return generic error to client
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @router.get("/", response_model=List[TaskDisplay])
 async def list_tasks(current_user: User = Depends(get_current_user)):

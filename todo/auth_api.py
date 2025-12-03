@@ -52,11 +52,11 @@ async def register_user(user_data: UserCreate):
         
         return {"username": user.username, "email": user.email}
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        # Log error server-side
+        print(f"Registration error: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Registration failed: {str(e)}"
+            detail="Registration failed. Please check your input."
         )
 
 @router.post("/login", response_model=Token)
