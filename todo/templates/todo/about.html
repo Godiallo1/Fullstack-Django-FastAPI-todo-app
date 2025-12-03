@@ -1,0 +1,41 @@
+{% extends 'todo/base.html' %}
+
+{% block title %}About - TodoApp{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 4rem; padding-bottom: 4rem;">
+    <div class="about-section" style="max-width: 800px; margin: 0 auto; text-align: center;">
+        <h1 style="font-size: 3rem; margin-bottom: 1.5rem;">About TodoApp</h1>
+        <p style="font-size: 1.25rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 3rem;">
+            TodoApp was built with a single mission: to help professionals master their day.
+            We believe that productivity shouldn't be complicated. Our tool is designed to be fast, intuitive, and
+            secure.
+        </p>
+
+        <div class="about-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; text-align: left;">
+            <div class="about-card"
+                style="background: white; padding: 2rem; border-radius: 16px; box-shadow: var(--shadow);">
+                <h3 style="margin-top: 0;">Our Story</h3>
+                <p style="color: var(--text-secondary);">
+                    Started in 2025, TodoApp grew from a simple command-line tool into a full-featured web application
+                    used by thousands.
+                </p>
+            </div>
+            <div class="about-card"
+                style="background: white; padding: 2rem; border-radius: 16px; box-shadow: var(--shadow);">
+                <h3 style="margin-top: 0;">Our Values</h3>
+                <p style="color: var(--text-secondary);">
+                    Simplicity, Speed, and Security. We don't bloat our software with unnecessary features. We focus on
+                    what works.
+                </p>
+            </div>
+        </div>
+
+        <div style="margin-top: 4rem;">
+            <h2>Meet the Team</h2>
+            <p style="color: var(--text-secondary);">Built by a passionate team of developers.</p>
+            <!-- Team placeholders could go here -->
+        </div>
+    </div>
+</div>
+{% endblock %}

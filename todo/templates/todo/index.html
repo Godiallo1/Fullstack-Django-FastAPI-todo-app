@@ -1,408 +1,179 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TodoApp</title>
-    <!-- This meta tag is crucial for passing the JWT token from Django to JavaScript -->
-    <meta name="jwt-access-token" content="{{ jwt_access_token }}" />
-    <link rel="stylesheet" href="{% static 'todo/styles.css' %}" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <header class="navbar">
-      <div class="container navbar-content">
-        <a href="#" class="logo">TodoApp</a>
-        <nav>
-          <a href="#" class="nav-link">Features</a>
-          <a href="#" class="nav-link">Pricing</a>
-          <a href="#" class="nav-link">About</a>
-          <a href="#" class="nav-link">Contact</a>
-          <a href="#" id="profile-link" class="nav-link hidden">Profile</a>
-        </nav>
-        <div class="nav-buttons">
-          <a href="#" id="login-btn" class="btn btn-secondary">Login</a>
-          <a href="#" id="signup-btn" class="btn btn-primary">Sign Up</a>
-          <a
-            href="{% url 'account_logout' %}"
-            id="logout-btn"
-            class="btn btn-secondary hidden"
-            >Logout</a
-          >
+{% extends 'todo/base.html' %}
+
+{% block title %}TodoApp - Master Your Day{% endblock %}
+
+{% block content %}
+<!-- LANDING PAGE (Visible when logged out) -->
+<div id="landing-page">
+  <section class="landing-hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1>Master Your Day, <br /><span class="text-gradient">One Task at a Time.</span></h1>
+        <p>
+          The ultimate task management tool for professionals. Prioritize,
+          track, and organize your life with our intelligent queue system.
+        </p>
+        <div class="hero-actions">
+          <button id="get-started-btn" class="btn btn-primary btn-lg">Get Started for Free</button>
+          <a href="#features" class="btn btn-secondary btn-lg">Learn More</a>
         </div>
       </div>
-    </header>
-
-    <!-- LANDING PAGE (Visible when logged out) -->
-    <div id="landing-page">
-      <section class="landing-hero">
-        <div class="container">
-          <div class="hero-content">
-            <h1>Master Your Day, <br /><span class="text-gradient">One Task at a Time.</span></h1>
-            <p>
-              The ultimate task management tool for professionals. Prioritize,
-              track, and organize your life with our intelligent queue system.
-            </p>
-            <div class="hero-actions">
-              <button id="get-started-btn" class="btn btn-primary btn-lg">Get Started for Free</button>
-              <button class="btn btn-secondary btn-lg">Learn More</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="features-section">
-        <div class="container">
-          <div class="features-grid">
-            <div class="feature-card">
-              <div class="feature-icon">🚀</div>
-              <h3>Smart Queue</h3>
-              <p>Every new task starts in a dedicated queue. Decide when to start or abort with a single click.</p>
-            </div>
-            <div class="feature-card">
-              <div class="feature-icon">🔥</div>
-              <h3>Prioritization</h3>
-              <p>Categorize tasks by High, Medium, or Low priority to focus on what matters most.</p>
-            </div>
-            <div class="feature-card">
-              <div class="feature-icon">♻️</div>
-              <h3>Recycle Bin</h3>
-              <p>Changed your mind? Aborted tasks are safely stored in the recycle bin. Restore them anytime.</p>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
+  </section>
 
-    <!-- DASHBOARD (Visible when logged in) -->
-    <div id="app-container" class="hidden">
-      <main class="container">
-        <div class="dashboard-header">
-            <h2>My Dashboard</h2>
-            <p class="date-display" id="current-date"></p>
+  <section id="features" class="features-section">
+    <div class="container">
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3>Smart Queue</h3>
+          <p>Focus on what matters. Our intelligent queue system helps you prioritize tasks effectively.</p>
         </div>
-
-        <section class="content-wrapper">
-          <!-- Add New Task Form -->
-          <div class="form-container">
-            <h2><span class="plus-icon">+</span> Create Task</h2>
-            <form id="task-form">
-              <div class="form-group">
-                <label for="title">Task Title</label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  placeholder="What needs to be done?"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="description">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows="3"
-                  placeholder="Add details..."
-                ></textarea>
-              </div>
-              <div class="row-group">
-                <div class="form-group half">
-                    <label for="priority">Priority</label>
-                    <select id="priority" name="priority">
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                    </select>
-                </div>
-                <div class="form-group half">
-                    <label for="due_date">Due Date</label>
-                    <input type="date" id="due_date" name="due_date" required />
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary btn-full">
-                Add to Queue
-              </button>
-            </form>
-          </div>
-
-          <!-- Task List Container -->
-          <div class="tasks-container">
-            <div class="tasks-header">
-              <h2>Your Tasks</h2>
-              <div class="tasks-controls">
-                <!-- FEATURE 1: Priority Filter -->
-                <select id="priority-filter" class="filter-select">
-                    <option value="All">All Priorities</option>
-                    <option value="High">High Priority</option>
-                    <option value="Medium">Medium Priority</option>
-                    <option value="Low">Low Priority</option>
-                </select>
-                <div class="tasks-meta">
-                    <p><span id="task-count">0</span> tasks</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tabs for Filtering -->
-            <div class="tabs">
-                <button class="btn btn-sm tab-btn active" data-tab="Queue">Queue</button>
-                <button class="btn btn-sm tab-btn" data-tab="In Progress">In Progress</button>
-                <button class="btn btn-sm tab-btn" data-tab="Completed">Completed</button>
-                <button class="btn btn-sm tab-btn" data-tab="Aborted">Recycle Bin</button>
-            </div>
-
-            <ul id="task-list"></ul>
-          </div>
-        </section>
-      </main>
-    </div>
-
-    <!-- Task Item Template -->
-    <template id="task-template">
-      <li class="task-item" data-id="">
-        <div class="task-details">
-          <div class="task-title-line">
-            <h3 class="task-title"></h3>
-            <span class="task-priority"></span>
-          </div>
-          <p class="task-description"></p>
-          <div class="task-meta-info">
-            <span class="task-due-date"></span>
-            <span class="task-status-badge"></span>
-          </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Lightning Fast</h3>
+          <p>Built for speed. Add, edit, and complete tasks in milliseconds without page reloads.</p>
         </div>
-        <div class="task-actions">
-            <!-- Dynamic Buttons (Start, Abort, etc.) will be injected here -->
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Secure by Design</h3>
+          <p>Your data is encrypted and secure. We prioritize your privacy and data security.</p>
         </div>
-      </li>
-    </template>
-
-    <!-- Edit Task Modal -->
-    <div id="edit-modal-overlay" class="modal-overlay hidden"></div>
-    <div id="edit-modal" class="modal hidden">
-      <div class="modal-header">
-        <h2>Edit Task</h2>
-        <button id="close-modal-btn" class="btn-icon">&times;</button>
       </div>
-      <div class="modal-content">
-        <form id="edit-task-form">
-          <input type="hidden" id="edit-task-id" />
-          <div class="form-group">
-            <label for="edit-title">Task Title</label
-            ><input type="text" id="edit-title" name="title" required />
-          </div>
-          <div class="form-group">
-            <label for="edit-description">Description</label
-            ><textarea
-              id="edit-description"
-              name="description"
-              rows="4"
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label for="edit-priority">Priority</label
-            ><select id="edit-priority" name="priority">
+    </div>
+  </section>
+</div>
+
+<!-- MAIN APP (Visible when logged in) -->
+<div id="app-container" class="container hidden">
+  <header class="dashboard-header">
+    <div>
+      <h1 style="margin: 0; font-size: 2rem;">My Tasks</h1>
+      <p style="color: var(--text-secondary); margin-top: 5px;" id="current-date"></p>
+    </div>
+    <div class="user-menu">
+      <!-- User info could go here -->
+    </div>
+  </header>
+
+  <div class="content-wrapper">
+    <!-- Sidebar / Form -->
+    <aside class="form-container">
+      <h2 style="margin-top: 0; margin-bottom: 1.5rem;">Add New Task</h2>
+      <form id="task-form">
+        <div class="form-group">
+          <label for="title">Task Title</label>
+          <input type="text" id="title" name="title" placeholder="e.g., Review Q3 Report" required />
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description (Optional)</label>
+          <textarea id="description" name="description" rows="3" placeholder="Add details..."></textarea>
+        </div>
+
+        <div class="row-group">
+          <div class="form-group half">
+            <label for="priority">Priority</label>
+            <select id="priority" name="priority">
               <option value="Low">Low</option>
               <option value="Medium">Medium</option>
               <option value="High">High</option>
             </select>
           </div>
-          <div class="form-group">
-            <label for="edit-due_date">Due Date</label
-            ><input type="date" id="edit-due_date" name="due_date" required />
+          <div class="form-group half">
+            <label for="due_date">Due Date</label>
+            <input type="date" id="due_date" name="due_date" required />
           </div>
-          <button type="submit" class="btn btn-primary btn-full">
-            Save Changes
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Profile Modal -->
-    <div id="profile-modal" class="modal hidden">
-      <div class="modal-header">
-        <h2>My Profile</h2>
-        <button id="close-profile-modal-btn" class="btn-icon">&times;</button>
-      </div>
-      <div class="modal-content">
-        <div
-          class="profile-header"
-          style="text-align: center; margin-bottom: 1.5rem"
-        >
-          <img
-            id="profile-avatar-display"
-            src=""
-            alt="Profile"
-            style="
-              width: 80px;
-              height: 80px;
-              border-radius: 50%;
-              object-fit: cover;
-              margin-bottom: 10px;
-              border: 2px solid var(--primary-color);
-            "
-          />
-          <h3 id="profile-username-display" style="margin: 0"></h3>
-          <p
-            id="profile-email-display"
-            style="
-              color: var(--text-secondary);
-              font-size: 0.9rem;
-              margin: 5px 0 0 0;
-            "
-          ></p>
         </div>
 
-        <form id="profile-form">
-          <div class="form-group">
-            <label for="profile-fullname">Full Name</label>
-            <input
-              type="text"
-              id="profile-fullname"
-              name="full_name"
-              placeholder="Enter your full name"
-            />
-          </div>
-          <div class="form-group">
-            <label for="profile-bio">Bio</label>
-            <textarea
-              id="profile-bio"
-              name="bio"
-              rows="3"
-              placeholder="Tell us about yourself..."
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label for="profile-location">Location</label>
-            <input
-              type="text"
-              id="profile-location"
-              name="location"
-              placeholder="City, Country"
-            />
-          </div>
-          <div class="form-group">
-            <label for="profile-avatar">Avatar URL</label>
-            <input
-              type="text"
-              id="profile-avatar"
-              name="avatar_url"
-              placeholder="https://example.com/image.jpg"
-            />
-            <small style="color: var(--text-secondary); font-size: 0.8rem"
-              >Paste a direct link to an image.</small
-            >
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">
-            Save Profile
-          </button>
-        </form>
-      </div>
-    </div>
+        <button type="submit" class="btn btn-primary btn-full">Add to Queue</button>
+      </form>
+    </aside>
 
-    <!-- Auth Modals -->
-    <div id="auth-modal-overlay" class="modal-overlay hidden"></div>
-    <div id="register-modal" class="modal hidden">
-      <div class="modal-header">
-        <h2>Create an Account</h2>
-        <button id="close-register-modal-btn" class="btn-icon">&times;</button>
+    <!-- Task List Area -->
+    <section class="tasks-container">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="Queue">Queue</button>
+        <button class="tab-btn" data-tab="In Progress">In Progress</button>
+        <button class="tab-btn" data-tab="Completed">Completed</button>
+        <button class="tab-btn" data-tab="Aborted">Bin</button>
       </div>
-      <div class="modal-content">
-        <form id="register-form">
-          <div id="register-error" class="error-message hidden"></div>
-          <div class="form-group">
-            <label for="register-username">Username</label
-            ><input
-              type="text"
-              id="register-username"
-              name="username"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="register-email">Email</label
-            ><input type="email" id="register-email" name="email" required />
-          </div>
-          <div class="form-group">
-            <label for="register-password">Password</label
-            ><input
-              type="password"
-              id="register-password"
-              name="password"
-              required
-            />
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">
-            Sign Up
-          </button>
-          <p class="auth-switch">
-            Already have an account? <a href="#" id="show-login-link">Login</a>
-          </p>
-        </form>
-      </div>
-    </div>
-    <div id="login-modal" class="modal hidden">
-      <div class="modal-header">
-        <h2>Login to Your Account</h2>
-        <button id="close-login-modal-btn" class="btn-icon">&times;</button>
-      </div>
-      <div class="modal-content">
-        <div class="social-auth">
-          <a href="/accounts/google/login/" class="btn btn-social google"
-            ><img
-              src="https://developers.google.com/identity/images/g-logo.png"
-              alt="Google logo"
-            />
-            Sign in with Google</a
-          >
-          <a href="/accounts/github/login/" class="btn btn-social github"
-            ><svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path
-                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
-              />
-            </svg>
-            Sign in with GitHub</a
-          >
-          <div class="divider">OR</div>
+
+      <div class="tasks-controls" style="margin-bottom: 1.5rem; justify-content: space-between;">
+        <span id="task-count" style="font-weight: 600; color: var(--text-secondary);">0 Tasks</span>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label for="priority-filter" style="font-size: 0.9rem; color: var(--text-secondary);">Filter:</label>
+          <select id="priority-filter" class="filter-select">
+            <option value="All">All Priorities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
         </div>
-        <form id="login-form">
-          <div id="login-error" class="error-message hidden"></div>
-          <div class="form-group">
-            <label for="login-username">Username</label
-            ><input type="text" id="login-username" name="username" required />
-          </div>
-          <div class="form-group">
-            <label for="login-password">Password</label
-            ><input
-              type="password"
-              id="login-password"
-              name="password"
-              required
-            />
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">Login</button>
-          <p class="auth-switch">
-            Don't have an account?
-            <a href="#" id="show-register-link">Sign Up</a>
-          </p>
-        </form>
+      </div>
+
+      <ul id="task-list">
+        <!-- Tasks injected here -->
+      </ul>
+    </section>
+  </div>
+</div>
+
+<!-- Edit Modal (Specific to Dashboard) -->
+<div id="edit-modal-overlay" class="modal-overlay hidden"></div>
+<div id="edit-modal" class="modal hidden">
+  <div class="modal-header">
+    <h2>Edit Task</h2>
+    <button id="close-modal-btn" class="btn-icon">✕</button>
+  </div>
+  <div class="modal-content">
+    <form id="edit-task-form">
+      <input type="hidden" id="edit-task-id" name="id">
+      <div class="form-group">
+        <label for="edit-title">Task Title</label>
+        <input type="text" id="edit-title" name="title" required />
+      </div>
+      <div class="form-group">
+        <label for="edit-description">Description</label>
+        <textarea id="edit-description" name="description" rows="3"></textarea>
+      </div>
+      <div class="row-group">
+        <div class="form-group half">
+          <label for="edit-priority">Priority</label>
+          <select id="edit-priority" name="priority">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+        <div class="form-group half">
+          <label for="edit-due_date">Due Date</label>
+          <input type="date" id="edit-due_date" name="due_date" required />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+    </form>
+  </div>
+</div>
+
+<!-- Template for Task Items -->
+<template id="task-template">
+  <li class="task-item">
+    <div class="task-details">
+      <div class="task-title-line">
+        <h3 class="task-title"></h3>
+        <span class="task-priority"></span>
+        <span class="task-status-badge"></span>
+      </div>
+      <p class="task-description"></p>
+      <div class="task-meta-info">
+        <span class="task-due-date"></span>
       </div>
     </div>
-
-    <!-- Toast Notification Container -->
-    <div id="toast" class="toast hidden"></div>
-
-    <script src="{% static 'todo/script.js' %}" defer></script>
-  </body>
-</html>
+    <div class="task-actions">
+      <!-- Actions injected via JS -->
+    </div>
+  </li>
+</template>
+{% endblock %}

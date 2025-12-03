@@ -21,3 +21,6 @@ def index(request):
         context['jwt_access_token'] = access_token
         
     return render(request, "todo/index.html", context)
+
+def about(request):
+    return render(request, "todo/about.html")

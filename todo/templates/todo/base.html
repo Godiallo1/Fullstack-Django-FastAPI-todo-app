@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}TodoApp{% endblock %}</title>
+    <!-- This meta tag is crucial for passing the JWT token from Django to JavaScript -->
+    <meta name="jwt-access-token" content="{{ jwt_access_token }}" />
+    <link rel="stylesheet" href="{% static 'todo/styles.css' %}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="container navbar-content">
+            <a href="{% url 'index' %}" class="logo">TodoApp</a>
+            <nav>
+                <a href="{% url 'index' %}" class="nav-link">Home</a>
+                <a href="#" class="nav-link">Features</a>
+                <a href="#" class="nav-link">Pricing</a>
+                <a href="{% url 'about' %}" class="nav-link">About</a>
+                <a href="#" class="nav-link">Contact</a>
+                <a href="#" id="profile-link" class="nav-link hidden">Profile</a>
+            </nav>
+            <div class="nav-buttons">
+                <a href="#" id="login-btn" class="btn btn-secondary">Login</a>
+                <a href="#" id="signup-btn" class="btn btn-primary">Sign Up</a>
+                <a href="{% url 'account_logout' %}" id="logout-btn" class="btn btn-secondary hidden">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>TodoApp</h3>
+                    <p>Master your day, one task at a time.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="{% url 'index' %}">Home</a></li>
+                        <li><a href="{% url 'about' %}">About</a></li>
+                        <li><a href="#">Features</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; {% now "Y" %} TodoApp. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modals (Auth, etc.) - Included here so they work on all pages if needed, 
+         or we can move them to specific blocks if they are only for the app -->
+    {% block modals %}
+    <!-- Auth Modals -->
+    <div id="auth-modal-overlay" class="modal-overlay hidden"></div>
+
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Welcome Back</h2>
+            <button id="close-login-modal-btn" class="btn-icon">✕</button>
+        </div>
+        <div class="modal-content">
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+                <div id="login-error" class="error-message hidden"></div>
+                <button type="submit" class="btn btn-primary btn-full">Login</button>
+            </form>
+            <div class="auth-switch">
+                Don't have an account? <a href="#" id="show-register-link">Sign up</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="register-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Create Account</h2>
+            <button id="close-register-modal-btn" class="btn-icon">✕</button>
+        </div>
+        <div class="modal-content">
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="reg-username">Username</label>
+                    <input type="text" id="reg-username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" name="password" required>
+                </div>
+                <div id="register-error" class="error-message hidden"></div>
+                <button type="submit" class="btn btn-primary btn-full">Sign Up</button>
+            </form>
+            <div class="auth-switch">
+                Already have an account? <a href="#" id="show-login-link">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal hidden">
+        <div class="modal-header">
+            <h2>Your Profile</h2>
+            <button id="close-profile-modal-btn" class="btn-icon">✕</button>
+        </div>
+        <div class="modal-content">
+            <div class="profile-header">
+                <img id="profile-avatar-display" src="" alt="Avatar">
+                <h3 id="profile-username-display"></h3>
+                <p id="profile-email-display" style="color: var(--text-secondary); font-size: 0.9rem;"></p>
+            </div>
+            <form id="profile-form">
+                <div class="form-group">
+                    <label for="profile-fullname">Full Name</label>
+                    <input type="text" id="profile-fullname" name="full_name">
+                </div>
+                <div class="form-group">
+                    <label for="profile-bio">Bio</label>
+                    <textarea id="profile-bio" name="bio" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="profile-location">Location</label>
+                    <input type="text" id="profile-location" name="location">
+                </div>
+                <div class="form-group">
+                    <label for="profile-avatar">Avatar URL</label>
+                    <input type="url" id="profile-avatar" name="avatar_url" placeholder="https://example.com/me.jpg">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Save Profile</button>
+            </form>
+        </div>
+    </div>
+    {% endblock %}
+
+    <div id="toast" class="toast"></div>
+
+    <script src="{% static 'todo/script.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>
